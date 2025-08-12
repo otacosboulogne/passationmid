@@ -50,7 +50,7 @@
     .field label{ display:block; font-size:12px; color:#333; margin:8px 0 4px; }
     .field input, .field textarea, .field select{ width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px; }
 
-    /* Radios pastilles ○ / ● */
+    /* Radios pastilles ○ / ● (compat iOS/PDF) */
     .radio-row{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
     .radio-option{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); white-space:nowrap; }
     .radio-option input[type="radio"]{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
@@ -303,14 +303,15 @@
     });
   </script>
 
-  <!-- libs PDF -->
+  <!-- libs PDF (séparées pour iOS, évite l’erreur "color") -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.min.js"></script>
 
   <!-- Envoi -->
   <script>
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzfVPLdU4OAw-BRb48Y7i_bXMov0J4QSKNZdiYetRghAGSWpVKxFgmJ-NSlUkXXoU9i/exec';
+    // <<< URL de ton déploiement WebApp >>>
+    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyrSsMDTdppMvJRkmOeiIG2jisQE-orNRlg1pxaHtzon9BwexCjOgP0d6t4GnCS7ac2/exec';
 
     function showMessage(text, type, withRetry){
       const c = document.getElementById('formMessageContainer');
@@ -351,6 +352,7 @@
             `;
             doc.head.appendChild(s);
 
+            // compacter le tableau dans le clone
             doc.querySelectorAll('table.check').forEach(t=>{
               t.style.tableLayout = 'fixed';
               t.style.width = '100%';
@@ -371,6 +373,7 @@
               c.style.lineHeight = '1.25';
             });
 
+            // valeurs figées
             ['date','time','number','text'].forEach(type=>{
               doc.querySelectorAll(`input[type="${type}"]`).forEach(el=>{
                 el.setAttribute('value', el.value || '');
@@ -423,12 +426,9 @@
         const pdfBlob = await makePdfBlob(page);
         submitbar.style.display = prevDisplay;
 
-        const safeDate = meta.date || new Date().toISOString().slice(0,10);
-        const safeHeure = (meta.heure || '').replace(':','-');
-        const fileName = `Passation MIDI - ${safeDate} ${safeHeure}${meta.responsable ? ' - ' + meta.responsable : ''}.pdf`;
-
+        // côté serveur: nom/dossier sont gérés par Apps Script
         const b64 = await blobToBase64(pdfBlob);
-        const body = new URLSearchParams({ data: JSON.stringify({ fileName, b64, meta }) });
+        const body = new URLSearchParams({ data: JSON.stringify({ b64, meta }) });
 
         const res = await fetch(WEBAPP_URL, { method:'POST', body });
         if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -443,11 +443,8 @@
         const title = document.getElementById('successTitle');
         const details = document.getElementById('successDetails');
         title.textContent = `Merci ${meta.responsable || ''} !`;
-        details.textContent = `La passation a bien été enregistrée.`;
+        details.textContent = `La passation a bien été enregistrée${json.folder ? ' dans '+json.folder : ''}${json.name ? ' sous le nom '+json.name : ''}.`;
         document.getElementById('successOverlay').classList.remove('hidden');
-
-        // On peut aussi afficher un petit message si tu veux
-        // showMessage('✅ Checklist envoyée avec succès !', 'success');
 
       }catch(err){
         submitbar.style.display = prevDisplay;
