@@ -1,67 +1,88 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CONTRÔLE PASSATION MIDI</title>
-  <style>
-    :root{
-      --ink:#111; --muted:#666; --line:#1a1a1a; --bg:#fff; --accent:#000;
-      --ok-bg:#e8f5e9; --ok-accent:#2e7d32;
-      --todo-bg:#ffebee; --todo-accent:#c62828;
-      --passation-bg:#e8f5e9;
-    }
-    html,body{height:100%}
-    body{font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:var(--bg); margin:0}
-    .page{max-width:980px;margin:24px auto;padding:24px;background:var(--passation-bg);border-radius:10px}
-    h1{text-align:center;letter-spacing:.5px;font-size:24px;margin:0 0 18px}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CONTRÔLE PASSATION MIDI</title>
+<style>
+  :root{
+    --ink:#111; --muted:#666; --line:#1a1a1a; --bg:#fff;
+    --ok-bg:#e8f5e9; --ok-accent:#2e7d32;
+    --todo-bg:#ffebee; --todo-accent:#c62828;
+    --passation-bg:#e8f5e9;
+  }
+  html,body{height:100%}
+  body{font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:var(--bg); margin:0}
 
-    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-    @media (max-width:900px){.grid{grid-template-columns:1fr}}
+  .page{max-width:980px;margin:24px auto;padding:24px;background:var(--passation-bg);border-radius:10px}
+  h1{text-align:center;letter-spacing:.5px;font-size:24px;margin:0 0 18px}
 
-    .block{background:#fff;border:2px solid var(--line);border-radius:6px;padding:10px 10px 6px;page-break-inside:avoid}
-    .block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
 
-    table.check{border-collapse:collapse;width:100%;font-size:13px;color:var(--ink)}
-    table.check th, table.check td{border:1px solid #ccc;padding:6px 8px;vertical-align:top;background:#fff}
-    table.check th{background:#f2f2f2;font-weight:700;text-align:left;color:var(--ink)}
-    table.check th:nth-child(2), table.check th:nth-child(3){width:92px;text-align:center}
-    table.check td:nth-child(2), table.check td:nth-child(3){text-align:center;white-space:nowrap}
+  .block{background:#fff;border:2px solid var(--line);border-radius:6px;padding:10px 10px 6px;page-break-inside:avoid}
+  .block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
 
-    .head-todo{background:var(--todo-bg)!important;color:var(--todo-accent);border-color:var(--todo-accent)!important}
-    .head-ok{background:var(--ok-bg)!important;color:var(--ok-accent);border-color:var(--ok-accent)!important}
-    .is-todo td{background:var(--todo-bg)} .is-ok td{background:var(--ok-bg)}
+  table.check{border-collapse:collapse;width:100%;font-size:13px;color:var(--ink)}
+  table.check th, table.check td{border:1px solid #ccc;padding:6px 8px;vertical-align:top;background:#fff}
+  table.check th{background:#f2f2f2;font-weight:700;text-align:left}
+  table.check th:nth-child(2), table.check th:nth-child(3){width:92px;text-align:center}
+  table.check td:nth-child(2), table.check td:nth-child(3){text-align:center;white-space:nowrap}
+  table.check tr{page-break-inside:avoid}
+  .head-todo{background:var(--todo-bg)!important;color:var(--todo-accent);border-color:var(--todo-accent)!important}
+  .head-ok{background:var(--ok-bg)!important;color:var(--ok-accent);border-color:var(--ok-accent)!important}
+  .is-todo td{background:var(--todo-bg)} .is-ok td{background:var(--ok-bg)}
+  .is-required td:first-child, .is-required td:first-child *{color:var(--todo-accent)!important;font-weight:700}
 
-    .is-required td:first-child, .is-required td:first-child *{color:var(--todo-accent)!important;font-weight:700}
+  .notes{margin-top:16px;border:2px solid var(--line);border-radius:6px;padding:10px;background:#fff}
+  .notes h3{margin:0 0 6px;font-size:14px;text-transform:uppercase}
+  .notes textarea{width:100%;min-height:90px;border:1px solid #ccc;border-radius:4px;padding:8px;font-family:inherit;font-size:13px}
 
-    .notes{margin-top:16px;border:2px solid var(--line);border-radius:6px;padding:10px;background:#fff}
-    .notes h3{margin:0 0 6px;font-size:14px;text-transform:uppercase}
-    .notes textarea{width:100%;min-height:90px;border:1px solid #ccc;border-radius:4px;padding:8px;font-family:inherit;font-size:13px}
+  .flex{display:flex;gap:12px;flex-wrap:wrap}
+  .flex .field{flex:1 1 220px}
+  .field label{display:block;font-size:12px;color:#333;margin:8px 0 4px}
+  .field input, .field textarea, .field select{width:100%;padding:8px;border:1px solid #ccc;border-radius:10px;font-size:16px;min-height:44px;line-height:1.3}
+  ::placeholder{color:#9aa3a8}
 
-    .flex{display:flex;gap:12px;flex-wrap:wrap}
-    .flex .field{flex:1 1 220px}
-    .field label{display:block;font-size:12px;color:#333;margin:8px 0 4px}
-    .field input, .field textarea, .field select{width:100%;padding:8px;border:1px solid #ccc;border-radius:4px;font-size:13px}
+  .radio-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .radio-option{display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #ddd;border-radius:999px}
+  .radio-option input[type="radio"]{width:20px;height:20px;margin:0}
+  /* (pas d'accent-color pour Safari/html2canvas) */
 
-    /* Radios : Oui/Non bien visibles */
-    .radio-row{display:flex;gap:24px;align-items:center;flex-wrap:wrap}
-    .radio-option{display:inline-flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);white-space:nowrap}
-    .radio-option input[type="radio"]{width:16px;height:16px;margin:0}
-    /* IMPORTANT : pas de accent-color (cause l'erreur Safari) */
-    /* input[type="radio"]{ accent-color: var(--ok-accent); }  <-- supprimé */
+  table.check td:nth-child(2) label.radio-option,
+  table.check td:nth-child(3) label.radio-option{
+    padding:6px 10px;border-radius:999px;border:1px solid #ddd;display:inline-flex
+  }
 
-    .footer{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:16px}
-    @media (max-width:700px){.footer{grid-template-columns:1fr}}
+  .footer{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:16px}
+  @media (max-width:700px){ .footer{grid-template-columns:1fr} }
 
-    .submitbar{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:18px}
-    button[type="submit"]{background:#111;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-weight:700;cursor:pointer}
-    button[type="reset"]{display:none!important}
-    input[disabled]{opacity:.35;cursor:not-allowed}
+  .submitbar{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:18px}
+  button[type="submit"]{background:#111;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-weight:700;cursor:pointer}
+  button[type="submit"][disabled]{opacity:.5;cursor:not-allowed}
+  button[type="reset"]{display:none!important}
 
-    @media print{
-      body{background:#fff}.page{margin:0;padding:0;background:#fff}.submitbar{display:none}a[href]:after{content:""}
-    }
-  </style>
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+  .toast.success{background:#2e7d32}.toast.error{background:#c62828}
+
+  /* UX mobile extra */
+  @media screen { .block h2{ position:sticky; top:8px; z-index:1; background:#fff; padding:6px 8px; border-radius:6px } }
+  @media (max-width:600px){
+    .page{padding:16px}
+    .block{padding:8px}
+    table.check{font-size:14px}
+    table.check th, table.check td{padding:8px}
+  }
+
+  @media print{
+    body{background:#fff}
+    .page{margin:10mm auto;padding:0;background:#fff;border-radius:0}
+    .block{border:1px solid #999}
+    .submitbar{display:none}
+    a[href]:after{content:""}
+  }
+</style>
 </head>
 <body>
   <div class="page">
@@ -124,13 +145,15 @@
       </div>
 
       <div class="submitbar">
-        <button type="submit">Envoyer la checklist</button>
+        <button id="sendBtn" type="submit">Envoyer la checklist</button>
       </div>
     </form>
   </div>
 
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
   <script>
-    // --- Modèle des sections et tâches ---
+    // --- Sections & tâches ---
     const SECTIONS = [
       { title: "Terrasse", tasks: ["Sol, tables, chaises","Poubelle","Cendriers vides et disponibles","Sol et surfaces propres"]},
       { title: "Toilettes Clients", tasks: ["Papier / savon","Toilettes (cuvette, lunette, rebords)","Odeur","Miroir","Poubelle propre et non pleine","Sèche-mains propre et fonctionnel"]},
@@ -156,13 +179,17 @@
       ["Tenue du personnel", new Set(["Charlotte, tablier, sur-chaussures en cuisine"])]
     ]);
     function isOkOnly(sectionTitle, taskText){ return OK_ONLY.has(sectionTitle) && OK_ONLY.get(sectionTitle).has(taskText); }
+
     const sectionsRoot = document.getElementById('sections');
+
     function buildStandardBlock(section){
       const block = document.createElement('section'); block.className='block';
       const h = document.createElement('h2'); h.textContent = section.title.toUpperCase();
       const table = document.createElement('table'); table.className='check';
-      const thead = document.createElement('thead'); thead.innerHTML = `<tr><th>Tâche</th><th class="head-todo">À FAIRE</th><th class="head-ok">OK</th></tr>`;
+      const thead = document.createElement('thead');
+      thead.innerHTML = `<tr><th>Tâche</th><th class="head-todo">À FAIRE</th><th class="head-ok">OK</th></tr>`;
       const tbody = document.createElement('tbody');
+
       section.tasks.forEach((task, tIdx) => {
         const id = `${section.title.replace(/[^a-z0-9]/gi,'_').toLowerCase()}_${tIdx}`;
         const onlyOk = isOkOnly(section.title, task);
@@ -176,127 +203,138 @@
           if(e.target.name === id){
             tr.classList.remove('is-todo','is-ok');
             if(e.target.value === 'A faire') tr.classList.add('is-todo');
-            if(e.target.value === 'OK') tr.classList.add('is-ok');
+            if(e.target.value === 'OK')      tr.classList.add('is-ok');
           }
         });
         tbody.appendChild(tr);
       });
-      table.appendChild(thead); table.appendChild(tbody); block.appendChild(h); block.appendChild(table); return block;
+
+      table.appendChild(thead); table.appendChild(tbody);
+      block.appendChild(h); block.appendChild(table);
+      return block;
     }
+
     function buildObjectifBlock(){
-      const block = document.createElement('section'); block.className = 'block';
-      const h = document.createElement('h2'); h.textContent = 'OBJECTIF';
+      const block = document.createElement('section'); block.className='block';
+      const h = document.createElement('h2'); h.textContent='OBJECTIF';
       const table = document.createElement('table'); table.className='check';
-      const thead = document.createElement('thead'); thead.innerHTML = `<tr><th>Élément</th><th class="head-ok">Oui</th><th class="head-todo">Non</th></tr>`;
+      const thead = document.createElement('thead');
+      thead.innerHTML = `<tr><th>Élément</th><th class="head-ok">Oui</th><th class="head-todo">Non</th></tr>`;
       const tbody = document.createElement('tbody');
-      const rows = [
+      [
         { label: "Objectif avis Google donné au salarié en caisse", name: "objectifAvisGoogle" },
         { label: "Briefing et débriefing effectués", name: "briefingDebriefing" },
         { label: "Satisfait du service", name: "satisfaitService" }
-      ];
-      rows.forEach(r => {
+      ].forEach(r=>{
         const tr = document.createElement('tr');
         tr.innerHTML = `<td>${r.label}</td>
           <td><label class="radio-option"><input type="radio" name="${r.name}" value="Oui"><span>Oui</span></label></td>
           <td><label class="radio-option"><input type="radio" name="${r.name}" value="Non"><span>Non</span></label></td>`;
         tbody.appendChild(tr);
       });
-      table.appendChild(thead); table.appendChild(tbody); block.appendChild(h); block.appendChild(table); return block;
+      table.appendChild(thead); table.appendChild(tbody);
+      block.appendChild(h); block.appendChild(table);
+      return block;
     }
+
+    // Génère les sections + OBJECTIF
     SECTIONS.forEach((section) => {
-      const block = buildStandardBlock(section); sectionsRoot.appendChild(block);
+      const block = buildStandardBlock(section);
+      sectionsRoot.appendChild(block);
       if (section.title === "E-Pack Hygiène") sectionsRoot.appendChild(buildObjectifBlock());
     });
   </script>
 
-  <!-- libs (séparées) -->
+  <!-- libs PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.min.js"></script>
-  <!-- fallback PNG -->
-  <script src="https://cdn.jsdelivr.net/npm/dom-to-image-more@3.5.0/dist/dom-to-image-more.min.js"></script>
 
   <script>
     const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzfVPLdU4OAw-BRb48Y7i_bXMov0J4QSKNZdiYetRghAGSWpVKxFgmJ-NSlUkXXoU9i/exec';
 
-    function blobToBase64(blob){
-      return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result.split(',')[1]);
-        reader.readAsDataURL(blob);
-      });
+    // Toast
+    const toast = document.getElementById('toast');
+    function showToast(msg, type='success'){
+      toast.textContent = msg;
+      toast.className = `toast show ${type}`;
+      setTimeout(()=> toast.className = 'toast', 2500);
     }
 
-    async function makePdfBlobWithHtml2pdf(page){
-      const opt = { margin: 10, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+    // Limite 2 envois / jour
+    function canSendToday(){
+      const key = 'passation-count-' + new Date().toISOString().slice(0,10);
+      const count = Number(localStorage.getItem(key) || 0);
+      return { ok: count < 2, key, count };
+    }
+    function bumpCounter(key){
+      const n = Number(localStorage.getItem(key) || 0) + 1;
+      localStorage.setItem(key, String(n));
+    }
+
+    // PDF
+    async function makePdfBlob(page){
+      const opt = { margin: 10, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit:'mm', format:'a4', orientation:'portrait' } };
       return await html2pdf().set(opt).from(page).output('blob');
     }
-
-    async function makePdfBlobWithPNG(page){
-      // Capture DOM -> PNG
-      const dataUrl = await domtoimage.toPng(page, { quality: 1 });
-      const img = new Image(); img.src = dataUrl; await img.decode();
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'mm', format:'a4', orientation:'portrait' });
-      // Fit image to A4 width
-      const pageW = 210, pageH = 297;
-      const imgW = pageW, imgH = img.height * (imgW / img.width);
-      pdf.addImage(dataUrl, 'PNG', 0, 0, imgW, imgH);
-      return pdf.output('blob');
+    function blobToBase64(blob){
+      return new Promise((resolve)=>{ const r=new FileReader(); r.onloadend=()=>resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
     }
 
-    async function sendPdfBlob(pdfBlob, meta){
-      const safeDate = meta.date || new Date().toISOString().slice(0,10);
-      const safeHeure = (meta.heure || '').replace(':','-');
-      const fileName = `Passation MIDI - ${safeDate} ${safeHeure}${meta.responsable ? ' - ' + meta.responsable : ''}.pdf`;
-      const b64 = await blobToBase64(pdfBlob);
-      const body = new URLSearchParams({ data: JSON.stringify({ fileName, b64, meta }) });
-      const res = await fetch(WEBAPP_URL, { method: 'POST', body });
-      const text = await res.text();
-      let json; try { json = JSON.parse(text); } catch { throw new Error('Réponse non-JSON : ' + text.slice(0,120)); }
-      if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur inconnue');
-      return json.url;
-    }
+    // Soumission
+    const form = document.getElementById('passationForm');
+    const sendBtn = document.getElementById('sendBtn');
+    let isSending = false;
 
-    document.getElementById('passationForm').addEventListener('submit', async (e) => {
+    form.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const form = e.target;
-      const submitBtn = form.querySelector('button[type="submit"]');
-      submitBtn.disabled = true;
+      if (isSending) return;
+      const quota = canSendToday();
+      if (!quota.ok){ showToast('Limite atteinte : 2 envois aujourd’hui.', 'error'); return; }
 
-      const meta = { date: form.date.value, heure: form.heure.value, responsable: (form.respUnique?.value || form.responsable?.value || '').trim() };
+      isSending = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = 'Envoi en cours…';
+
+      const meta = {
+        date: form.date.value,
+        heure: form.heure.value,
+        responsable: (form.respUnique?.value || form.responsable?.value || '').trim()
+      };
+
       const page = document.querySelector('.page');
       const submitbar = document.querySelector('.submitbar');
       const prevDisplay = submitbar.style.display;
       submitbar.style.display = 'none';
 
       try {
-        let pdfBlob;
-        try {
-          // Essai 1 : html2pdf (rapide, multi-pages)
-          pdfBlob = await makePdfBlobWithHtml2pdf(page);
-        } catch (err) {
-          // Si erreur "unsupported color function" -> fallback PNG->PDF
-          if (String(err).includes('unsupported color function') || String(err).includes('color(')) {
-            pdfBlob = await makePdfBlobWithPNG(page);
-          } else {
-            throw err;
-          }
-        } finally {
-          submitbar.style.display = prevDisplay;
-        }
+        const pdfBlob = await makePdfBlob(page);
+        submitbar.style.display = prevDisplay;
 
-        const url = await sendPdfBlob(pdfBlob, meta);
-        alert('PDF envoyé sur Drive ✅\n' + url);
-        window.open(url, '_blank');
+        const b64 = await blobToBase64(pdfBlob);
+        const body = new URLSearchParams({ data: JSON.stringify({ b64, meta }) });
+
+        const res = await fetch(WEBAPP_URL, { method: 'POST', body });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const text = await res.text();
+        let json; try { json = JSON.parse(text); } catch { throw new Error('Réponse non-JSON'); }
+        if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
+
+        showToast('Envoyé avec succès ✅');
+        sendBtn.textContent = 'Envoyé ✅';
+        bumpCounter(quota.key); // +1 envoi du jour
 
       } catch (err) {
         submitbar.style.display = prevDisplay;
         console.error(err);
-        alert('Échec de l’envoi : ' + err.message);
-      } finally {
-        submitBtn.disabled = false;
+        showToast('Échec de l’envoi : ' + err.message, 'error');
+        sendBtn.disabled = false;
+        sendBtn.textContent = 'Réessayer';
+        isSending = false;
+        return;
       }
+
+      // On ne réactive pas le bouton après succès (empêche un second clic)
     });
   </script>
 </body>
