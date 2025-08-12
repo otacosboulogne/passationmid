@@ -1,88 +1,91 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>CONTRÔLE PASSATION MIDI</title>
-<style>
-  :root{
-    --ink:#111; --muted:#666; --line:#1a1a1a; --bg:#fff;
-    --ok-bg:#e8f5e9; --ok-accent:#2e7d32;
-    --todo-bg:#ffebee; --todo-accent:#c62828;
-    --passation-bg:#e8f5e9;
-  }
-  html,body{height:100%}
-  body{font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:var(--bg); margin:0}
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>CONTRÔLE PASSATION MIDI</title>
+  <style>
+    :root{
+      --ink:#111; --muted:#666; --line:#1a1a1a; --bg:#fff;
+      --ok-bg:#e8f5e9; --ok-accent:#2e7d32;
+      --todo-bg:#ffebee; --todo-accent:#c62828;
+      --passation-bg:#e8f5e9;
+    }
+    html,body{height:100%}
+    body{font-family: Arial, Helvetica, sans-serif; color:var(--ink); background:var(--bg); margin:0}
 
-  .page{max-width:980px;margin:24px auto;padding:24px;background:var(--passation-bg);border-radius:10px}
-  h1{text-align:center;letter-spacing:.5px;font-size:24px;margin:0 0 18px}
+    .page{max-width:980px;margin:24px auto;padding:24px;background:var(--passation-bg);border-radius:10px}
+    h1{text-align:center;letter-spacing:.5px;font-size:24px;margin:0 0 18px}
 
-  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-  @media (max-width:900px){ .grid{grid-template-columns:1fr} }
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+    @media (max-width:900px){ .grid{grid-template-columns:1fr} }
 
-  .block{background:#fff;border:2px solid var(--line);border-radius:6px;padding:10px 10px 6px;page-break-inside:avoid}
-  .block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
+    .block{background:#fff;border:2px solid var(--line);border-radius:6px;padding:10px 10px 6px;page-break-inside:avoid}
+    .block h2{font-size:16px;margin:0 0 8px;text-transform:uppercase;letter-spacing:.5px}
 
-  table.check{border-collapse:collapse;width:100%;font-size:13px;color:var(--ink)}
-  table.check th, table.check td{border:1px solid #ccc;padding:6px 8px;vertical-align:top;background:#fff}
-  table.check th{background:#f2f2f2;font-weight:700;text-align:left}
-  table.check th:nth-child(2), table.check th:nth-child(3){width:92px;text-align:center}
-  table.check td:nth-child(2), table.check td:nth-child(3){text-align:center;white-space:nowrap}
-  table.check tr{page-break-inside:avoid}
-  .head-todo{background:var(--todo-bg)!important;color:var(--todo-accent);border-color:var(--todo-accent)!important}
-  .head-ok{background:var(--ok-bg)!important;color:var(--ok-accent);border-color:var(--ok-accent)!important}
-  .is-todo td{background:var(--todo-bg)} .is-ok td{background:var(--ok-bg)}
-  .is-required td:first-child, .is-required td:first-child *{color:var(--todo-accent)!important;font-weight:700}
+    /* Conteneur scrollable pour iOS */
+    .table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    table.check{ border-collapse:collapse; width:100%; min-width:720px; font-size:13px; color:var(--ink) }
+    table.check th, table.check td{ border:1px solid #ccc; padding:6px 8px; vertical-align:top; background:#fff }
+    table.check th{ background:#f2f2f2; font-weight:700; text-align:left; color:var(--ink) }
+    table.check th:nth-child(2), table.check th:nth-child(3){ width:92px; text-align:center }
+    table.check td:nth-child(2), table.check td:nth-child(3){ text-align:center; white-space:nowrap }
+    table.check tr{ page-break-inside:avoid }
 
-  .notes{margin-top:16px;border:2px solid var(--line);border-radius:6px;padding:10px;background:#fff}
-  .notes h3{margin:0 0 6px;font-size:14px;text-transform:uppercase}
-  .notes textarea{width:100%;min-height:90px;border:1px solid #ccc;border-radius:4px;padding:8px;font-family:inherit;font-size:13px}
+    .head-todo{ background:var(--todo-bg)!important; color:var(--todo-accent); border-color:var(--todo-accent)!important }
+    .head-ok{ background:var(--ok-bg)!important; color:var(--ok-accent); border-color:var(--ok-accent)!important }
+    .is-todo td{ background:var(--todo-bg) } .is-ok td{ background:var(--ok-bg) }
+    .is-required td:first-child, .is-required td:first-child *{ color:var(--todo-accent)!important; font-weight:700 }
 
-  .flex{display:flex;gap:12px;flex-wrap:wrap}
-  .flex .field{flex:1 1 220px}
-  .field label{display:block;font-size:12px;color:#333;margin:8px 0 4px}
-  .field input, .field textarea, .field select{width:100%;padding:8px;border:1px solid #ccc;border-radius:10px;font-size:16px;min-height:44px;line-height:1.3}
-  ::placeholder{color:#9aa3a8}
+    .notes{margin-top:16px;border:2px solid var(--line);border-radius:6px;padding:10px;background:#fff}
+    .notes h3{margin:0 0 6px;font-size:14px;text-transform:uppercase}
+    .notes textarea{width:100%;min-height:90px;border:1px solid #ccc;border-radius:10px;padding:8px;font-family:inherit;font-size:16px}
 
-  .radio-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .radio-option{display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #ddd;border-radius:999px}
-  .radio-option input[type="radio"]{width:20px;height:20px;margin:0}
-  /* (pas d'accent-color pour Safari/html2canvas) */
+    .flex{display:flex;gap:12px;flex-wrap:wrap}
+    .flex .field{flex:1 1 220px}
+    .field label{display:block;font-size:12px;color:#333;margin:8px 0 4px}
+    .field input, .field textarea, .field select{width:100%;padding:8px;border:1px solid #ccc;border-radius:10px;font-size:16px;min-height:44px;line-height:1.3}
+    ::placeholder{color:#9aa3a8}
 
-  table.check td:nth-child(2) label.radio-option,
-  table.check td:nth-child(3) label.radio-option{
-    padding:6px 10px;border-radius:999px;border:1px solid #ddd;display:inline-flex
-  }
+    .radio-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+    .radio-option{display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid #ddd;border-radius:999px}
+    .radio-option input[type="radio"]{width:20px;height:20px;margin:0}
+    /* (pas d'accent-color pour Safari/html2canvas) */
+    table.check td:nth-child(2) label.radio-option,
+    table.check td:nth-child(3) label.radio-option{ padding:6px 10px;border-radius:999px;border:1px solid #ddd;display:inline-flex }
 
-  .footer{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:16px}
-  @media (max-width:700px){ .footer{grid-template-columns:1fr} }
+    .footer{display:grid;gap:12px;grid-template-columns:1fr 1fr;margin-top:16px}
+    @media (max-width:700px){ .footer{grid-template-columns:1fr} }
 
-  .submitbar{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:18px}
-  button[type="submit"]{background:#111;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-weight:700;cursor:pointer}
-  button[type="submit"][disabled]{opacity:.5;cursor:not-allowed}
-  button[type="reset"]{display:none!important}
+    .submitbar{display:flex;gap:12px;align-items:center;justify-content:flex-end;margin-top:18px}
+    button[type="submit"]{background:#111;color:#fff;border:none;border-radius:6px;padding:10px 16px;font-weight:700;cursor:pointer}
+    button[type="submit"][disabled]{opacity:.5;cursor:not-allowed}
+    button[type="reset"]{display:none!important}
 
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
-  .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
-  .toast.success{background:#2e7d32}.toast.error{background:#c62828}
+    .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#111;color:#fff;padding:12px 16px;border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.2);opacity:0;pointer-events:none;transition:opacity .2s, transform .2s}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(-6px)}
+    .toast.success{background:#2e7d32}.toast.error{background:#c62828}
 
-  /* UX mobile extra */
-  @media screen { .block h2{ position:sticky; top:8px; z-index:1; background:#fff; padding:6px 8px; border-radius:6px } }
-  @media (max-width:600px){
-    .page{padding:16px}
-    .block{padding:8px}
-    table.check{font-size:14px}
-    table.check th, table.check td{padding:8px}
-  }
+    @media screen { .block h2{ position:sticky; top:8px; z-index:1; background:#fff; padding:6px 8px; border-radius:6px } }
+    @media (max-width:600px){
+      .page{padding:16px}
+      .block{padding:8px}
+      table.check{font-size:14px}
+      table.check th, table.check td{padding:8px}
+      /* si sticky gêne sur petits écrans iOS */
+      .block h2{ position:static }
+    }
 
-  @media print{
-    body{background:#fff}
-    .page{margin:10mm auto;padding:0;background:#fff;border-radius:0}
-    .block{border:1px solid #999}
-    .submitbar{display:none}
-    a[href]:after{content:""}
-  }
-</style>
+    @supports (height: 100svh) { html, body { min-height: 100svh; } }
+
+    @media print{
+      body{background:#fff}
+      .page{margin:10mm auto;padding:0;background:#fff;border-radius:0}
+      .block{border:1px solid #999}
+      .submitbar{display:none}
+      a[href]:after{content:""}
+    }
+  </style>
 </head>
 <body>
   <div class="page">
@@ -150,10 +153,11 @@
     </form>
   </div>
 
+  <!-- Toast -->
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
   <script>
-    // --- Sections & tâches ---
+    // --- Modèle des sections et tâches ---
     const SECTIONS = [
       { title: "Terrasse", tasks: ["Sol, tables, chaises","Poubelle","Cendriers vides et disponibles","Sol et surfaces propres"]},
       { title: "Toilettes Clients", tasks: ["Papier / savon","Toilettes (cuvette, lunette, rebords)","Odeur","Miroir","Poubelle propre et non pleine","Sèche-mains propre et fonctionnel"]},
@@ -167,6 +171,8 @@
       { title: "E-Pack Hygiène", tasks: ["Nettoyage des postes rempli","Check-list manager remplie"]},
       { title: "Tenue du personnel", tasks: ["Complète, propre, repassée","Cheveux attachés","Pas de bijoux sauf alliance","Charlotte, tablier, sur-chaussures en cuisine"]}
     ];
+
+    // Tâches "OK uniquement"
     const OK_ONLY = new Map([
       ["Cuisine", new Set(["Viandes et suppléments en suffisance","Sauces en suffisance","Essuie-mains, savon en suffisance","Galettes descendues","Rouleaux de papier dans imprimantes","Huile à niveau dans les friteuses","Eau à niveau dans bain-marie","Emballages en suffisance"])],
       ["Salle", new Set(["Bornes fonctionnelles"])],
@@ -185,6 +191,7 @@
     function buildStandardBlock(section){
       const block = document.createElement('section'); block.className='block';
       const h = document.createElement('h2'); h.textContent = section.title.toUpperCase();
+
       const table = document.createElement('table'); table.className='check';
       const thead = document.createElement('thead');
       thead.innerHTML = `<tr><th>Tâche</th><th class="head-todo">À FAIRE</th><th class="head-ok">OK</th></tr>`;
@@ -210,17 +217,26 @@
       });
 
       table.appendChild(thead); table.appendChild(tbody);
-      block.appendChild(h); block.appendChild(table);
+
+      // >>> iOS fix : table dans un conteneur scrollable horizontal
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      wrap.appendChild(table);
+
+      block.appendChild(h);
+      block.appendChild(wrap);
       return block;
     }
 
     function buildObjectifBlock(){
       const block = document.createElement('section'); block.className='block';
       const h = document.createElement('h2'); h.textContent='OBJECTIF';
+
       const table = document.createElement('table'); table.className='check';
       const thead = document.createElement('thead');
       thead.innerHTML = `<tr><th>Élément</th><th class="head-ok">Oui</th><th class="head-todo">Non</th></tr>`;
       const tbody = document.createElement('tbody');
+
       [
         { label: "Objectif avis Google donné au salarié en caisse", name: "objectifAvisGoogle" },
         { label: "Briefing et débriefing effectués", name: "briefingDebriefing" },
@@ -232,12 +248,19 @@
           <td><label class="radio-option"><input type="radio" name="${r.name}" value="Non"><span>Non</span></label></td>`;
         tbody.appendChild(tr);
       });
+
       table.appendChild(thead); table.appendChild(tbody);
-      block.appendChild(h); block.appendChild(table);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'table-wrap';
+      wrap.appendChild(table);
+
+      block.appendChild(h);
+      block.appendChild(wrap);
       return block;
     }
 
-    // Génère les sections + OBJECTIF
+    // Insertion des sections + OBJECTIF
     SECTIONS.forEach((section) => {
       const block = buildStandardBlock(section);
       sectionsRoot.appendChild(block);
@@ -289,8 +312,12 @@
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
       if (isSending) return;
+
       const quota = canSendToday();
-      if (!quota.ok){ showToast('Limite atteinte : 2 envois aujourd’hui.', 'error'); return; }
+      if (!quota.ok){
+        showToast('Limite atteinte : 2 envois aujourd’hui.', 'error');
+        return;
+      }
 
       isSending = true;
       sendBtn.disabled = true;
@@ -316,6 +343,7 @@
 
         const res = await fetch(WEBAPP_URL, { method: 'POST', body });
         if (!res.ok) throw new Error('HTTP ' + res.status);
+
         const text = await res.text();
         let json; try { json = JSON.parse(text); } catch { throw new Error('Réponse non-JSON'); }
         if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
@@ -334,7 +362,7 @@
         return;
       }
 
-      // On ne réactive pas le bouton après succès (empêche un second clic)
+      // On ne réactive PAS le bouton après succès (empêche un second clic)
     });
   </script>
 </body>
