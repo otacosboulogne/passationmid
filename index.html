@@ -168,11 +168,11 @@
     <div id="formMessageContainer"></div>
   </div>
 
-  <!-- Grand message de succès -->
+  <!-- Grand message de succès (texte simple) -->
   <div id="successOverlay" class="success-overlay hidden" role="dialog" aria-modal="true">
     <div class="success-card">
-      <h3 id="successTitle">Merci !</h3>
-      <p id="successDetails">La passation est enregistrée.</p>
+      <h3 id="successTitle">Passation envoyée</h3>
+      <p id="successDetails">Votre passation a bien été enregistrée.</p>
       <button class="ok" onclick="document.getElementById('successOverlay').classList.add('hidden')">OK</button>
     </div>
   </div>
@@ -188,7 +188,7 @@
       { title: "Comptoir", tasks: ["Frigos à boissons remplis","Comptoir desserts rempli","Toppings, nappages, lait en suffisance","Télécommandes, agrafeuse, tampon, téléphone disponibles","DLC contrôlées, signalement si besoin","Meuble O’sucré propre et rangé","Comptoir propre et rangé","Présence pailles/serviettes/gobelets/emballages","Plateaux propres et dressés","Machine à glace propre","Vaisselle propre","Savon, essuie-mains en suffisance","Produits d’entretien en suffisance","Rouleaux pleins dans imprimantes et TPE","Caisse comptée + celle de l'équipier + fond de caisse fait si Glory en panne"]},
       { title: "Réserves", tasks: ["Réserve bien rangée","Sol et étagères propres","FIFO / DLC","Disponibilité produits (dès réception après rupture)"]},
       { title: "Étage", tasks: ["Sol propre","Toilettes, lavabos, murs propres","Savon, essuie-mains en suffisance","Poubelles non pleines","Miroirs propres"]},
-      { title: "Plonge", tasks: ["Plonge terminée","Zone et matériel propres","Produits diluer et en suffisance"]},
+      { title: "Plonge", tasks: ["Plonge terminée","Zone et matériel propres","Produits dilués et en suffisance"]},
       { title: "E-Pack Hygiène", tasks: ["Nettoyage des postes rempli","Check-list manager remplie"]},
       { title: "Tenue du personnel", tasks: ["Complète, propre, repassée","Cheveux attachés","Pas de bijoux sauf alliance","Charlotte, tablier, sur-chaussures en cuisine"]}
     ];
@@ -197,7 +197,7 @@
       ["Cuisine", new Set(["Viandes et suppléments en suffisance","Sauces en suffisance","Essuie-mains, savon en suffisance","Galettes descendues","Rouleaux de papier dans imprimantes","Huile à niveau dans les friteuses","Eau à niveau dans bain-marie","Emballages en suffisance"])],
       ["Salle", new Set(["Bornes fonctionnelles"])],
       ["Réserves", new Set(["Disponibilité produits (dès réception après rupture)"])],
-      ["Plonge", new Set(["Produits diluer et en suffisance"])],
+      ["Plonge", new Set(["Produits dilués et en suffisance"])],
       ["Toilettes Clients", new Set(["Papier / savon"])],
       ["Chambres froides", new Set(["Décongélations préparées","Produits remontés / rotation faite"])],
       ["Comptoir", new Set(["Frigos à boissons remplis","Comptoir desserts rempli","Toppings, nappages, lait en suffisance","DLC contrôlées, signalement si besoin","Plateaux propres et dressés","Rouleaux pleins dans imprimantes et TPE","Caisse comptée + celle de l'équipier + fond de caisse fait si Glory en panne"])],
@@ -303,15 +303,15 @@
     });
   </script>
 
-  <!-- libs PDF (séparées pour iOS, évite l’erreur "color") -->
+  <!-- libs PDF -->
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.min.js"></script>
 
   <!-- Envoi -->
   <script>
-    // <<< URL de ton déploiement WebApp >>>
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyrSsMDTdppMvJRkmOeiIG2jisQE-orNRlg1pxaHtzon9BwexCjOgP0d6t4GnCS7ac2/exec';
+    // >>> URL de TON WebApp déployé
+    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbwC9hVKUJKesHjDTB1uhCuO1ia9PDFqpW6yPfWWZJGU48vhCCEaO-b3FKQmJWgS-ihz/exec';
 
     function showMessage(text, type, withRetry){
       const c = document.getElementById('formMessageContainer');
@@ -338,6 +338,21 @@
       return `passation-sent-${d}-${r}`;
     }
 
+    function pad(n){ return String(n).padStart(2,'0'); }
+    function sanitizeResp(resp){
+      return String(resp||'').trim().replace(/\s+/g,'_').replace(/[^\p{L}\p{N}_-]/gu,'');
+    }
+    function buildTargetName(meta){
+      const now = new Date();
+      const MM = pad(now.getMonth()+1);
+      const DD = pad(now.getDate());
+      const HH = pad(now.getHours());
+      const mm = pad(now.getMinutes());
+      const resp = sanitizeResp(meta.responsable);
+      // => MM-DD_HH-mm_responsable.pdf  (plus fiable que "/")
+      return `${MM}-${DD}_${HH}-${mm}_${resp}.pdf`;
+    }
+
     async function makePdfBlob(page){
       const opt = {
         margin: 10,
@@ -352,7 +367,7 @@
             `;
             doc.head.appendChild(s);
 
-            // compacter le tableau dans le clone
+            // compacter les tableaux dans le clone
             doc.querySelectorAll('table.check').forEach(t=>{
               t.style.tableLayout = 'fixed';
               t.style.width = '100%';
@@ -373,7 +388,7 @@
               c.style.lineHeight = '1.25';
             });
 
-            // valeurs figées
+            // valeurs figées pour le PDF
             ['date','time','number','text'].forEach(type=>{
               doc.querySelectorAll(`input[type="${type}"]`).forEach(el=>{
                 el.setAttribute('value', el.value || '');
@@ -426,31 +441,29 @@
         const pdfBlob = await makePdfBlob(page);
         submitbar.style.display = prevDisplay;
 
-        // côté serveur: nom/dossier sont gérés par Apps Script
         const b64 = await blobToBase64(pdfBlob);
-        const body = new URLSearchParams({ data: JSON.stringify({ b64, meta }) });
+        const targetName = buildTargetName(meta); // MM-DD_HH-mm_responsable.pdf
+        const body = new URLSearchParams({ data: JSON.stringify({ b64, meta, targetName }) });
 
         const res = await fetch(WEBAPP_URL, { method:'POST', body });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const txt = await res.text();
         let json; try{ json = JSON.parse(txt); } catch{ throw new Error('Réponse non-JSON'); }
-        if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
+        if (json.ok !== true) throw new Error(json.error || 'Erreur serveur');
 
-        // Succès : verrouiller + grand message
+        // Succès : verrouiller + afficher "Passation envoyée"
         formAlreadySent = true;
         localStorage.setItem(key, '1');
 
-        const title = document.getElementById('successTitle');
-        const details = document.getElementById('successDetails');
-        title.textContent = `Merci ${meta.responsable || ''} !`;
-        details.textContent = `La passation a bien été enregistrée${json.folder ? ' dans '+json.folder : ''}${json.name ? ' sous le nom '+json.name : ''}.`;
+        document.getElementById('successTitle').textContent = 'Passation envoyée';
+        document.getElementById('successDetails').textContent = 'Votre passation a bien été enregistrée.';
         document.getElementById('successOverlay').classList.remove('hidden');
 
       }catch(err){
         submitbar.style.display = prevDisplay;
-        btn.disabled = false;              // ré-activer pour réessayer
+        btn.disabled = false;
         console.error(err);
-        showMessage('❌ Échec de l’envoi : ' + err.message, 'error', true); // bouton Réessayer
+        showMessage('❌ Échec de l’envoi : ' + err.message, 'error', true);
       }
     });
   </script>
