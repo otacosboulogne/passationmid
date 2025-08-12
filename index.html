@@ -3,456 +3,398 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>CONTRÔLE PASSATION MIDI</title>
+  <title>CONTRÔLE PASSATION</title>
+  <meta name="theme-color" content="#000" />
   <style>
     :root{
-      --ink:#111; --muted:#666; --line:#1a1a1a; --bg:#fff;
-      --ok-bg:#e8f5e9; --ok-accent:#2e7d32;
-      --todo-bg:#ffebee; --todo-accent:#c62828;
-      --passation-bg:#e8f5e9;
+      --ink:#111; --muted:#666; --line:#e5e5e5; --bg:#fff; --accent:#000;
+      --req:#d32f2f; --ok:#2e7d32;
     }
     html,body{height:100%}
     body{
-      font-family: Arial, Helvetica, sans-serif;
-      color:var(--ink); background:var(--bg); margin:0;
-      -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      color:var(--ink); background:var(--bg); margin:0; -webkit-font-smoothing:antialiased;
     }
-
-    .page{ max-width:980px; margin:24px auto; padding:24px; background:var(--passation-bg); border-radius:10px; }
-    h1{ text-align:center; letter-spacing:.5px; font-size:24px; margin:0 0 18px; }
-
-    .grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
-    @media (max-width:900px){ .grid{ grid-template-columns:1fr; } }
-
-    .block{ background:#fff; border:2px solid var(--line); border-radius:6px; padding:10px 10px 6px; page-break-inside:avoid; }
-    .block h2{ font-size:16px; margin:0 0 8px; text-transform:uppercase; letter-spacing:.5px; }
-
-    /* --- Tableau compact + colonnes étroites --- */
-    table.check{ border-collapse:collapse; width:100%; table-layout:fixed; font-size:11px; color:var(--ink); }
-    table.check th, table.check td{ border:1px solid #ccc; padding:4px 6px; vertical-align:top; background:#fff; }
-    table.check th{ background:#f2f2f2; font-weight:700; text-align:left; color:var(--ink); }
-    table.check th:nth-child(2), table.check td:nth-child(2),
-    table.check th:nth-child(3), table.check td:nth-child(3){ width:64px; text-align:center; white-space:nowrap; }
-    table.check th:first-child, table.check td:first-child{ white-space:normal; word-break:break-word; hyphens:auto; line-height:1.25; }
-
-    .head-todo{ background:var(--todo-bg)!important; color:var(--todo-accent); border-color:var(--todo-accent)!important; }
-    .head-ok{ background:var(--ok-bg)!important; color:var(--ok-accent); border-color:var(--ok-accent)!important; }
-    .is-todo td{ background:var(--todo-bg); } .is-ok td{ background:var(--ok-bg); }
-
-    .is-required td:first-child, .is-required td:first-child *{ color:var(--todo-accent)!important; font-weight:700; }
-
-    .notes{ margin-top:16px; border:2px solid var(--line); border-radius:6px; padding:10px; background:#fff; }
-    .notes h3{ margin:0 0 6px; font-size:14px; text-transform:uppercase; }
-    .notes textarea{ width:100%; min-height:90px; border:1px solid #ccc; border-radius:4px; padding:8px; font-family:inherit; font-size:13px; }
-
-    .flex{ display:flex; gap:12px; flex-wrap:wrap; }
-    .flex .field{ flex:1 1 220px; }
-    .field label{ display:block; font-size:12px; color:#333; margin:8px 0 4px; }
-    .field input, .field textarea, .field select{ width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px; }
-
-    /* Radios pastilles ○ / ● (compat iOS/PDF) */
-    .radio-row{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
-    .radio-option{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); white-space:nowrap; }
-    .radio-option input[type="radio"]{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
-    .r-bullet::before{ content:'○'; display:inline-block; font-size:14px; line-height:1; }
-    .radio-option input[type="radio"]:checked + .r-bullet::before{ content:'●'; font-weight:700; }
-    .r-text{ margin-left:4px; }
-
-    .footer{ display:grid; gap:12px; grid-template-columns:1fr 1fr; margin-top:16px; }
-    @media (max-width:700px){ .footer{ grid-template-columns:1fr; } }
-
-    .submitbar{ display:flex; gap:12px; align-items:center; justify-content:flex-end; margin-top:18px; }
-    button[type="submit"]{ background:#111; color:#fff; border:none; border-radius:6px; padding:10px 16px; font-weight:700; cursor:pointer; }
-    button[type="submit"][disabled]{ opacity:.45; cursor:not-allowed; }
-    button[type="reset"]{ display:none!important; }
-    input[disabled]{ opacity:.35; cursor:not-allowed; }
-
-    .form-message{ margin-top:15px; padding:12px; border-radius:6px; font-weight:bold; text-align:center; }
-    .form-message.success{ background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
-    .form-message.error{ background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
-    .form-message .retry{ margin-left:10px; padding:6px 10px; border:0; border-radius:5px; background:#111; color:#fff; cursor:pointer; }
-
-    /* Grand message de succès */
-    .success-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
-    .success-card{ background:#fff; border-radius:12px; max-width:560px; width:100%; text-align:center; padding:24px 20px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
-    .success-card h3{ margin:0 0 10px; font-size:22px; }
-    .success-card p{ margin:0; font-size:14px; }
-    .success-card .ok{ margin-top:16px; padding:10px 16px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:700; cursor:pointer; }
-    .hidden{ display:none !important; }
-
-    @media print{
-      body{background:#fff}
-      .page{margin:0;padding:0;background:#fff}
-      .submitbar{display:none}
-      a[href]:after{content:""}
+    .wrap{max-width:820px;margin:0 auto;padding:16px}
+    h1{font-size:22px;margin:0 0 8px 0; letter-spacing:.3px}
+    .sub{color:var(--muted); font-size:13px; margin-bottom:14px}
+    fieldset{border:1px solid var(--line); border-radius:12px; padding:12px; margin:10px 0}
+    legend{font-weight:700; padding:0 6px; font-size:14px}
+    label{display:block; font-size:14px; margin:10px 0 4px}
+    input[type="text"],input[type="number"],input[type="date"],input[type="time"],select,textarea{
+      width:100%; font-size:15px; padding:10px 12px; border:1px solid var(--line); border-radius:10px; box-sizing:border-box;
+      background:#fafafa;
     }
+    textarea{min-height:90px; resize:vertical}
+    .grid{display:grid; grid-template-columns:1fr 110px; gap:6px 10px; align-items:center}
+    .item{padding:8px 0; border-bottom:1px dashed var(--line); font-size:14px}
+    .item:last-child{border-bottom:0}
+    .req{color:var(--req); font-weight:700}
+    .okchip{color:var(--ok); font-weight:600}
+    .actions{position:sticky; bottom:0; background:linear-gradient(180deg, rgba(255,255,255,.2), #fff 60%); padding:14px 0 6px; backdrop-filter:saturate(150%) blur(4px)}
+    button{
+      width:100%; appearance:none; border:0; border-radius:14px; padding:14px 16px; font-size:16px; font-weight:700;
+      background:#000; color:#fff; box-shadow:0 6px 16px rgba(0,0,0,.18); cursor:pointer;
+    }
+    button:disabled{opacity:.5; cursor:not-allowed}
+    .row{display:flex; gap:8px}
+    .row>*{flex:1}
+    .hint{font-size:12px; color:var(--muted)}
+    .radio-line{display:flex; gap:14px; align-items:center; margin-top:6px}
+    .tiny{font-size:12px}
+    /* Modal */
+    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.45); z-index:50; padding:18px}
+    .modal.show{display:grid}
+    .card{background:#fff; border-radius:16px; padding:22px; max-width:420px; width:100%; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .card h2{margin:0 0 10px; font-size:22px}
+    .card p{margin:0 0 18px; color:#333}
+    .okbtn{background:#2e7d32}
+    .retrybtn{background:#000}
+    .mt8{margin-top:8px}
   </style>
 </head>
 <body>
-  <div class="page">
-    <h1>CONTRÔLE PASSATION MIDI</h1>
+  <div class="wrap">
+    <h1>CONTRÔLE PASSATION</h1>
+    <div class="sub">Affichage optimisé mobile • Le PDF est archivé par mois sur Drive • Nom de fichier : <b>MM-DD_HH-mm_responsable.pdf</b></div>
 
-    <form id="passationForm">
-      <div class="grid" id="sections"></div>
-
-      <div class="notes">
-        <h3>Commentaires & informations</h3>
-        <div class="flex">
-          <div class="field" style="flex:1 1 100%">
-            <label for="commentaires">Commentaires et informations diverses (Information importante / personnel / incident caisse / technique)</label>
-            <textarea id="commentaires" name="commentaires" placeholder="Saisir ici..."></textarea>
+    <form id="formPassation" autocomplete="off">
+      <fieldset>
+        <legend>Informations générales</legend>
+        <div class="row">
+          <div>
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" required />
           </div>
-          <div class="field" style="flex:1 1 100%">
-            <label for="ruptures">Préciser ici les prochaines ruptures</label>
-            <textarea id="ruptures" name="ruptures" placeholder="Produits à risque de rupture, quantités restantes, etc..."></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="footer">
-        <div class="block">
-          <h2>Informations importantes</h2>
-          <div class="flex">
-            <div class="field">
-              <label for="nombrePertesConception">Nombre de pertes de conception en cuisine durant ton service</label>
-              <input id="nombrePertesConception" name="nombrePertesConception" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
-            </div>
-            <div class="field">
-              <label for="nombreRepasEmployes">Nombre de repas employés donnés dans le service</label>
-              <input id="nombreRepasEmployes" name="nombreRepasEmployes" type="number" inputmode="numeric" min="0" step="1" placeholder="0" />
-            </div>
-            <div class="field" style="flex:1 1 280px">
-              <label>La commande sur Inpulse a été validée</label>
-              <div class="radio-row" role="radiogroup" aria-label="Commande validée">
-                <label class="radio-option">
-                  <input type="radio" name="commandeValidee" value="Oui">
-                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Oui</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="commandeValidee" value="Non">
-                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Non</span>
-                </label>
-              </div>
-            </div>
-            <div class="field" style="flex:1 1 280px">
-              <label>Le reporting a été rempli</label>
-              <div class="radio-row" role="radiogroup" aria-label="Reporting rempli">
-                <label class="radio-option">
-                  <input type="radio" name="reportingRempli" value="Oui">
-                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Oui</span>
-                </label>
-                <label class="radio-option">
-                  <input type="radio" name="reportingRempli" value="Non">
-                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Non</span>
-                </label>
-              </div>
-            </div>
+          <div>
+            <label for="heure">Heure</label>
+            <input id="heure" name="heure" type="time" required />
           </div>
         </div>
-        
-        <div class="block">
-          <h2>Informations de passation</h2>
-          <div class="flex">
-            <div class="field"><label for="date">Date</label><input id="date" name="date" type="date" required /></div>
-            <div class="field"><label for="heure">Heure</label><input id="heure" name="heure" type="time" required /></div>
-            <div class="field" style="flex:1 1 280px"><label for="respUnique">Nom du responsable</label><input id="respUnique" name="responsable" type="text" required /></div>
+        <label for="responsable">Nom du responsable <span class="hint">(obligatoire)</span></label>
+        <input id="responsable" name="responsable" type="text" placeholder="Ex. Kma" required />
+      </fieldset>
+
+      <fieldset>
+        <legend>Informations importantes</legend>
+        <div class="row">
+          <div>
+            <label for="pertes">Pertes de conception cuisine (nb)</label>
+            <input id="pertes" name="pertes" type="number" min="0" value="0" />
+          </div>
+          <div>
+            <label for="repasEmp">Repas employés donnés (nb)</label>
+            <input id="repasEmp" name="repasEmp" type="number" min="0" value="0" />
           </div>
         </div>
-      </div>
 
-      <div class="submitbar">
-        <button type="submit">Envoyer la checklist</button>
+        <label>Commande Inpulse validée ?</label>
+        <div class="radio-line tiny">
+          <label><input type="radio" name="inpulse" value="Oui" checked> Oui</label>
+          <label><input type="radio" name="inpulse" value="Non"> Non</label>
+        </div>
+
+        <label class="mt8">Reporting rempli ?</label>
+        <div class="radio-line tiny">
+          <label><input type="radio" name="reporting" value="Oui" checked> Oui</label>
+          <label><input type="radio" name="reporting" value="Non"> Non</label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Cuisine</legend>
+        <div class="grid">
+          <div class="item">Viandes & suppléments en suffisance</div>
+          <select name="cui_viandes">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Sauces en suffisance</div>
+          <select name="cui_sauces">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Essuie-mains & savon en suffisance</div>
+          <select name="cui_essuie">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Galettes descendues</div>
+          <select name="cui_galettes">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Rouleaux papier imprimantes</div>
+          <select name="cui_rouleaux">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Huile à niveau dans friteuses</div>
+          <select name="cui_huile">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Eau à niveau dans bain-marie</div>
+          <select name="cui_bainmarie">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Emballages en suffisance</div>
+          <select name="cui_emballages">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Salle</legend>
+        <div class="grid">
+          <div class="item">Bornes fonctionnelles</div>
+          <select name="sal_bornes">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Réserves</legend>
+        <div class="grid">
+          <div class="item req">Disponibilité produits (Caisses, Otter) <span class="tiny">(obligatoire)</span></div>
+          <select name="res_dispo" id="res_dispo">
+            <option selected>OK</option>
+            <option disabled>À faire</option> <!-- À faire désactivé ici -->
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Plonge</legend>
+        <div class="grid">
+          <div class="item">Produits dilués & en suffisance</div>
+          <select name="plg_produits">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Toilettes clients</legend>
+        <div class="grid">
+          <div class="item">Papier / Savon</div>
+          <select name="toi_papier">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Chambres froides</legend>
+        <div class="grid">
+          <div class="item">Décongélations préparées</div>
+          <select name="cf_decong">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Produits remontés / rotation faite</div>
+          <select name="cf_rotation">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Checklist – Comptoir</legend>
+        <div class="grid">
+          <div class="item">Frigos à boissons remplis</div>
+          <select name="cpt_frigo">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Comptoir desserts rempli</div>
+          <select name="cpt_desserts">
+            <option>OK</option><option>À faire</option>
+          </select>
+
+          <div class="item">Toppings, nappages, lait en suffisance</div>
+          <select name="cpt_toppings">
+            <option>OK</option><option>À faire</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Notes</legend>
+        <textarea name="notes" placeholder="Observations, incidents, points d’attention…"></textarea>
+      </fieldset>
+
+      <div class="actions">
+        <button id="btnSend" type="submit">Envoyer la checklist</button>
+        <div class="hint">Après envoi : un PDF est créé et archivé automatiquement. Un message “Passation envoyée” s’affiche.</div>
       </div>
     </form>
-
-    <div id="formMessageContainer"></div>
   </div>
 
-  <!-- Grand message de succès -->
-  <div id="successOverlay" class="success-overlay hidden" role="dialog" aria-modal="true">
-    <div class="success-card">
-      <h3 id="successTitle">Merci !</h3>
-      <p id="successDetails">La passation est enregistrée.</p>
-      <button class="ok" onclick="document.getElementById('successOverlay').classList.add('hidden')">OK</button>
+  <!-- Modal succès / erreur -->
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modaltitle">
+    <div class="card">
+      <h2 id="modaltitle">Passation envoyée</h2>
+      <p id="modaltext">Votre passation a été enregistrée.</p>
+      <div class="row">
+        <button class="okbtn" onclick="closeModal()">OK</button>
+        <button id="retryBtn" class="retrybtn" style="display:none" onclick="retryLast()">Réessayer</button>
+      </div>
     </div>
   </div>
 
-  <!-- Sections dynamiques -->
   <script>
-    const SECTIONS = [
-      { title: "Terrasse", tasks: ["Sol, tables, chaises","Poubelle","Cendriers vides et disponibles","Sol et surfaces propres"]},
-      { title: "Toilettes Clients", tasks: ["Papier / savon","Toilettes (cuvette, lunette, rebords)","Odeur","Miroir","Poubelle propre et non pleine","Sèche-mains propre et fonctionnel"]},
-      { title: "Cuisine", tasks: ["Viandes et suppléments en suffisance","Sauces en suffisance","Frigo rempli","Essuie-mains, savon en suffisance","Poubelles changées","Traçabilité prise","Pertes comptabilisées","Galettes descendues","Rouleaux de papier dans imprimantes","Huile à niveau dans les friteuses","Eau à niveau dans bain-marie","Friteuses filtrées","Filtre friteuse changé","Emballages en suffisance"]},
-      { title: "Chambres froides", tasks: ["Décongélations préparées","Sauces en double dans meuble froid","CF propres","Caillebotis propres","Étagères propres","Produits remontés / rotation faite","Bacs rouges remplis de frites"]},
-      { title: "Salle", tasks: ["Sol propre","Tables, pieds de tables, chaises propres","Poubelles propres et non pleines","Musique en marche","Bornes fonctionnelles","Enseigne allumée (si nuit)"]},
-      { title: "Comptoir", tasks: ["Frigos à boissons remplis","Comptoir desserts rempli","Toppings, nappages, lait en suffisance","Télécommandes, agrafeuse, tampon, téléphone disponibles","DLC contrôlées, signalement si besoin","Meuble O’sucré propre et rangé","Comptoir propre et rangé","Présence pailles/serviettes/gobelets/emballages","Plateaux propres et dressés","Machine à glace propre","Vaisselle propre","Savon, essuie-mains en suffisance","Produits d’entretien en suffisance","Rouleaux pleins dans imprimantes et TPE","Caisse comptée + celle de l'équipier + fond de caisse fait si Glory en panne"]},
-      { title: "Réserves", tasks: ["Réserve bien rangée","Sol et étagères propres","FIFO / DLC","Disponibilité produits (dès réception après rupture)"]},
-      { title: "Étage", tasks: ["Sol propre","Toilettes, lavabos, murs propres","Savon, essuie-mains en suffisance","Poubelles non pleines","Miroirs propres"]},
-      { title: "Plonge", tasks: ["Plonge terminée","Zone et matériel propres","Produits diluer et en suffisance"]},
-      { title: "E-Pack Hygiène", tasks: ["Nettoyage des postes rempli","Check-list manager remplie"]},
-      { title: "Tenue du personnel", tasks: ["Complète, propre, repassée","Cheveux attachés","Pas de bijoux sauf alliance","Charlotte, tablier, sur-chaussures en cuisine"]}
-    ];
+    // === CONFIG
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxP5Mp2yqQmsjHhuZvIUWsFfuAZB0UzNyYzngbcDT7rk9dSD11d41_tVZV-KUyD4oll/exec";
 
-    const OK_ONLY = new Map([
-      ["Cuisine", new Set(["Viandes et suppléments en suffisance","Sauces en suffisance","Essuie-mains, savon en suffisance","Galettes descendues","Rouleaux de papier dans imprimantes","Huile à niveau dans les friteuses","Eau à niveau dans bain-marie","Emballages en suffisance"])],
-      ["Salle", new Set(["Bornes fonctionnelles"])],
-      ["Réserves", new Set(["Disponibilité produits (dès réception après rupture)"])],
-      ["Plonge", new Set(["Produits diluer et en suffisance"])],
-      ["Toilettes Clients", new Set(["Papier / savon"])],
-      ["Chambres froides", new Set(["Décongélations préparées","Produits remontés / rotation faite"])],
-      ["Comptoir", new Set(["Frigos à boissons remplis","Comptoir desserts rempli","Toppings, nappages, lait en suffisance","DLC contrôlées, signalement si besoin","Plateaux propres et dressés","Rouleaux pleins dans imprimantes et TPE","Caisse comptée + celle de l'équipier + fond de caisse fait si Glory en panne"])],
-      ["E-Pack Hygiène", new Set(["Nettoyage des postes rempli","Check-list manager remplie"])],
-      ["Tenue du personnel", new Set(["Charlotte, tablier, sur-chaussures en cuisine"])]
-    ]);
+    // === Helpers
+    const $ = s => document.querySelector(s);
+    const modal = $('#modal'), modalTitle = $('#modaltitle'), modalText = $('#modaltext'), retryBtn = $('#retryBtn');
+    let lastPayload = null; // pour réessayer si échec
 
-    function isOkOnly(sectionTitle, taskText){
-      return OK_ONLY.has(sectionTitle) && OK_ONLY.get(sectionTitle).has(taskText);
+    function openModal(title, text, showRetry=false){
+      modalTitle.textContent = title;
+      modalText.textContent = text;
+      retryBtn.style.display = showRetry ? 'block' : 'none';
+      modal.classList.add('show');
     }
+    function closeModal(){ modal.classList.remove('show'); }
+    window.closeModal = closeModal; window.retryLast = async () => { if(lastPayload) await sendPayload(lastPayload); };
 
-    const sectionsRoot = document.getElementById('sections');
+    // Pré-remplir date/heure à maintenant
+    (function initDateTime(){
+      const now = new Date();
+      const pad = n => String(n).padStart(2,'0');
+      $('#date').value = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}`;
+      $('#heure').value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+    })();
 
-    function buildStandardBlock(section){
-      const block = document.createElement('section'); block.className='block';
-      const h = document.createElement('h2'); h.textContent = section.title.toUpperCase();
-
-      const table = document.createElement('table'); table.className='check';
-      const thead = document.createElement('thead');
-      thead.innerHTML = `<tr>
-        <th>Tâche</th>
-        <th class="head-todo">À FAIRE</th>
-        <th class="head-ok">OK</th>
-      </tr>`;
-      const tbody = document.createElement('tbody');
-
-      section.tasks.forEach((task, tIdx) => {
-        const id = `${section.title.replace(/[^a-z0-9]/gi,'_').toLowerCase()}_${tIdx}`;
-        const onlyOk = isOkOnly(section.title, task);
-
-        const tr = document.createElement('tr');
-        if (onlyOk) tr.classList.add('is-required');
-
-        tr.innerHTML = `
-          <td>${task}</td>
-          <td>${
-            onlyOk
-              ? `<label class="radio-option" title="Non disponible pour cette tâche">
-                   <input type="radio" disabled>
-                   <span class="r-bullet" aria-hidden="true"></span>
-                 </label>`
-              : `<label class="radio-option">
-                   <input type="radio" name="${id}" value="A faire" aria-label="${task} - À faire">
-                   <span class="r-bullet" aria-hidden="true"></span>
-                 </label>`
-          }</td>
-          <td>
-            <label class="radio-option">
-              <input type="radio" name="${id}" value="OK" aria-label="${task} - OK">
-              <span class="r-bullet" aria-hidden="true"></span>
-            </label>
-          </td>
-        `;
-
-        tr.addEventListener('change', (e) => {
-          if(e.target.name === id){
-            tr.classList.remove('is-todo','is-ok');
-            if(e.target.value === 'A faire') tr.classList.add('is-todo');
-            if(e.target.value === 'OK')      tr.classList.add('is-ok');
-          }
-        });
-
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(thead); table.appendChild(tbody);
-      block.appendChild(h); block.appendChild(table);
-      return block;
-    }
-
-    function buildObjectifBlock(){
-      const block = document.createElement('section'); block.className='block';
-      const h = document.createElement('h2'); h.textContent = 'OBJECTIF';
-
-      const table = document.createElement('table'); table.className='check';
-      const thead = document.createElement('thead');
-      thead.innerHTML = `<tr><th>Élément</th><th class="head-ok">Oui</th><th class="head-todo">Non</th></tr>`;
-      const tbody = document.createElement('tbody');
-
-      [
-        { label: "Objectif avis Google donné au salarié en caisse", name: "objectifAvisGoogle" },
-        { label: "Briefing et débriefing effectués", name: "briefingDebriefing" },
-        { label: "Satisfait du service", name: "satisfaitService" }
-      ].forEach(r=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${r.label}</td>
-          <td><label class="radio-option"><input type="radio" name="${r.name}" value="Oui" aria-label="${r.label} - Oui"><span class="r-bullet" aria-hidden="true"></span></label></td>
-          <td><label class="radio-option"><input type="radio" name="${r.name}" value="Non" aria-label="${r.label} - Non"><span class="r-bullet" aria-hidden="true"></span></label></td>`;
-        tbody.appendChild(tr);
-      });
-
-      table.appendChild(thead); table.appendChild(tbody);
-      block.appendChild(h); block.appendChild(table);
-      return block;
-    }
-
-    // Génère les sections + insère OBJECTIF après "E-Pack Hygiène"
-    SECTIONS.forEach((section) => {
-      const block = buildStandardBlock(section);
-      sectionsRoot.appendChild(block);
-      if (section.title === "E-Pack Hygiène") sectionsRoot.appendChild(buildObjectifBlock());
-    });
-  </script>
-
-  <!-- libs PDF (séparées pour iOS, évite l’erreur "color") -->
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.min.js"></script>
-
-  <!-- Envoi -->
-  <script>
-    // <<< URL de ton déploiement WebApp >>>
-    const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbyrSsMDTdppMvJRkmOeiIG2jisQE-orNRlg1pxaHtzon9BwexCjOgP0d6t4GnCS7ac2/exec';
-
-    function showMessage(text, type, withRetry){
-      const c = document.getElementById('formMessageContainer');
-      c.innerHTML = '';
-      const m = document.createElement('div');
-      m.className = 'form-message ' + (type === 'success' ? 'success' : 'error');
-      m.textContent = text;
-      if (withRetry){
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'retry'; b.textContent = 'Réessayer';
-        b.onclick = () => document.querySelector('#passationForm button[type="submit"]').click();
-        m.appendChild(b);
+    // Construit un mini-HTML (compact) pour le PDF
+    function buildPdfHTML(data){
+      const esc = s => String(s??'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+      function line(label, val, required=false){
+        return `<tr><td${required?' style="color:#d32f2f;font-weight:700"':''}>${esc(label)}</td><td style="text-align:right">${esc(val)}</td></tr>`;
       }
-      c.appendChild(m);
+      return `
+        <meta charset="UTF-8">
+        <style>
+          body{font-family:Arial,Helvetica,sans-serif;margin:20px;color:#111}
+          h1{font-size:20px;margin:0 0 8px}
+          .sub{color:#666;font-size:12px;margin-bottom:12px}
+          table{width:100%; border-collapse:collapse; font-size:12px}
+          td{padding:6px 0; border-bottom:1px dotted #ddd}
+          section{margin:12px 0 4px}
+          h2{font-size:14px;margin:12px 0 6px}
+        </style>
+        <h1>Contrôle Passation</h1>
+        <div class="sub">Date ${esc(data.date)} — ${esc(data.heure)} • Resp. ${esc(data.responsable)}</div>
+
+        <h2>Informations importantes</h2>
+        <table>
+          ${line('Pertes conception cuisine', data.pertes)}
+          ${line('Repas employés donnés', data.repasEmp)}
+          ${line('Commande Inpulse validée', data.inpulse)}
+          ${line('Reporting rempli', data.reporting)}
+        </table>
+
+        <h2>Cuisine</h2>
+        <table>
+          ${line('Viandes & suppléments', data.cui_viandes)}
+          ${line('Sauces', data.cui_sauces)}
+          ${line('Essuie-mains & savon', data.cui_essuie)}
+          ${line('Galettes descendues', data.cui_galettes)}
+          ${line('Rouleaux papier imprimantes', data.cui_rouleaux)}
+          ${line('Huile friteuses', data.cui_huile)}
+          ${line('Eau bain-marie', data.cui_bainmarie)}
+          ${line('Emballages', data.cui_emballages)}
+        </table>
+
+        <h2>Salle</h2>
+        <table>
+          ${line('Bornes fonctionnelles', data.sal_bornes)}
+        </table>
+
+        <h2>Réserves</h2>
+        <table>
+          ${line('Disponibilité produits (Caisses, Otter)', data.res_dispo, true)}
+        </table>
+
+        <h2>Plonge</h2>
+        <table>
+          ${line('Produits dilués', data.plg_produits)}
+        </table>
+
+        <h2>Toilettes clients</h2>
+        <table>
+          ${line('Papier / Savon', data.toi_papier)}
+        </table>
+
+        <h2>Chambres froides</h2>
+        <table>
+          ${line('Décongélations préparées', data.cf_decong)}
+          ${line('Produits remontés / rotation', data.cf_rotation)}
+        </table>
+
+        <h2>Comptoir</h2>
+        <table>
+          ${line('Frigos à boissons', data.cpt_frigo)}
+          ${line('Comptoir desserts', data.cpt_desserts)}
+          ${line('Toppings / nappages / lait', data.cpt_toppings)}
+        </table>
+
+        ${data.notes ? `<h2>Notes</h2><div style="font-size:12px">${esc(data.notes)}</div>` : ''}
+      `;
     }
 
-    function blobToBase64(blob){
-      return new Promise((resolve)=>{ const r=new FileReader(); r.onloadend=()=>resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
-    }
-
-    function makeKey(meta){
-      const d = meta.date || new Date().toISOString().slice(0,10);
-      const r = (meta.responsable||'').trim().toLowerCase();
-      return `passation-sent-${d}-${r}`;
-    }
-
-    async function makePdfBlob(page){
-      const opt = {
-        margin: 10,
-        html2canvas: {
-          scale: 2,
-          useCORS: true,
-          onclone: (doc) => {
-            const s = doc.createElement('style');
-            s.textContent = `
-              * { -webkit-appearance: none !important; appearance: none !important; }
-              input, select, textarea { background:#fff !important; color:#111 !important; }
-            `;
-            doc.head.appendChild(s);
-
-            // compacter le tableau dans le clone
-            doc.querySelectorAll('table.check').forEach(t=>{
-              t.style.tableLayout = 'fixed';
-              t.style.width = '100%';
-              t.style.fontSize = '11px';
-            });
-            doc.querySelectorAll('table.check th, table.check td').forEach(c=>{
-              c.style.padding = '4px 6px';
-            });
-            doc.querySelectorAll('table.check th:nth-child(2), table.check td:nth-child(2), table.check th:nth-child(3), table.check td:nth-child(3)').forEach(c=>{
-              c.style.width = '64px';
-              c.style.whiteSpace = 'nowrap';
-              c.style.textAlign = 'center';
-            });
-            doc.querySelectorAll('table.check th:first-child, table.check td:first-child').forEach(c=>{
-              c.style.whiteSpace = 'normal';
-              c.style.wordBreak  = 'break-word';
-              c.style.hyphens    = 'auto';
-              c.style.lineHeight = '1.25';
-            });
-
-            // valeurs figées
-            ['date','time','number','text'].forEach(type=>{
-              doc.querySelectorAll(`input[type="${type}"]`).forEach(el=>{
-                el.setAttribute('value', el.value || '');
-              });
-            });
-            doc.querySelectorAll('textarea').forEach(t=>{
-              const v = t.value || '';
-              const repl = doc.createElement('div');
-              repl.style.whiteSpace = 'pre-wrap';
-              repl.style.border = '1px solid #ccc';
-              repl.style.borderRadius = '4px';
-              repl.style.padding = '8px';
-              repl.textContent = v;
-              t.parentNode.replaceChild(repl, t);
-            });
-          }
-        },
-        jsPDF: { unit:'mm', format:'a4', orientation:'portrait' }
-      };
-      return await html2pdf().set(opt).from(page).output('blob');
-    }
-
-    let formAlreadySent = false;
-
-    document.getElementById('passationForm').addEventListener('submit', async (e)=>{
-      e.preventDefault();
-
-      const form = e.target;
-      const btn  = form.querySelector('button[type="submit"]');
-
-      const meta = {
-        date: form.date.value,
-        heure: form.heure.value,
-        responsable: (form.respUnique?.value || form.responsable?.value || '').trim()
-      };
-
-      const key = makeKey(meta);
-      if (formAlreadySent || localStorage.getItem(key)){
-        showMessage('⚠️ Ce formulaire a déjà été envoyé.', 'error');
-        return;
-      }
-
+    async function sendPayload(payload){
+      lastPayload = payload;
+      const btn = $('#btnSend');
       btn.disabled = true;
-      const page = document.querySelector('.page');
-      const submitbar = document.querySelector('.submitbar');
-      const prevDisplay = submitbar.style.display;
-      submitbar.style.display = 'none';
 
       try{
-        const pdfBlob = await makePdfBlob(page);
-        submitbar.style.display = prevDisplay;
-
-        // côté serveur: nom/dossier sont gérés par Apps Script
-        const b64 = await blobToBase64(pdfBlob);
-        const body = new URLSearchParams({ data: JSON.stringify({ b64, meta }) });
-
-        const res = await fetch(WEBAPP_URL, { method:'POST', body });
-        if (!res.ok) throw new Error('HTTP ' + res.status);
-        const txt = await res.text();
-        let json; try{ json = JSON.parse(txt); } catch{ throw new Error('Réponse non-JSON'); }
-        if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
-
-        // Succès : verrouiller + grand message
-        formAlreadySent = true;
-        localStorage.setItem(key, '1');
-
-        const title = document.getElementById('successTitle');
-        const details = document.getElementById('successDetails');
-        title.textContent = `Merci ${meta.responsable || ''} !`;
-        details.textContent = `La passation a bien été enregistrée${json.folder ? ' dans '+json.folder : ''}${json.name ? ' sous le nom '+json.name : ''}.`;
-        document.getElementById('successOverlay').classList.remove('hidden');
-
+        const res = await fetch(SCRIPT_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify(payload)
+        });
+        const data = await res.json();
+        if(data && data.ok){
+          openModal('Passation envoyée', 'Votre passation a été enregistrée.', false);
+          $('#formPassation').reset();
+          // Remettre date/heure courantes après reset
+          initDateTime && initDateTime();
+        }else{
+          openModal('Erreur', (data && data.error) ? String(data.error) : 'Échec de l’envoi.', true);
+        }
       }catch(err){
-        submitbar.style.display = prevDisplay;
-        btn.disabled = false;              // ré-activer pour réessayer
-        console.error(err);
-        showMessage('❌ Échec de l’envoi : ' + err.message, 'error', true); // bouton Réessayer
+        openModal('Erreur réseau', err.message || 'Impossible d’envoyer.', true);
+      }finally{
+        btn.disabled = false;
       }
+    }
+
+    // Soumission
+    document.getElementById('formPassation').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const responsable = (fd.get('responsable')||'').toString().trim();
+      if(!responsable){ alert('Veuillez saisir le nom du responsable.'); return; }
+
+      const data = Object.fromEntries(fd.entries());
+      const htmlPdf = buildPdfHTML(data);
+
+      const payload = {
+        html: htmlPdf,
+        responsable: responsable,
+        timestamp: Date.now()
+      };
+      await sendPayload(payload);
     });
+
+    // Forcer hard refresh si besoin: ajouter ?v=2 à l’URL
   </script>
 </body>
 </html>
