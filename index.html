@@ -31,25 +31,15 @@
     table.check{ border-collapse:collapse; width:100%; table-layout:fixed; font-size:11px; color:var(--ink); }
     table.check th, table.check td{ border:1px solid #ccc; padding:4px 6px; vertical-align:top; background:#fff; }
     table.check th{ background:#f2f2f2; font-weight:700; text-align:left; color:var(--ink); }
-    /* Colonnes 2/3 super étroites */
     table.check th:nth-child(2), table.check td:nth-child(2),
-    table.check th:nth-child(3), table.check td:nth-child(3){
-      width:64px; text-align:center; white-space:nowrap;
-    }
-    /* Colonne 1 plus tassée */
-    table.check th:first-child, table.check td:first-child{
-      white-space:normal; word-break:break-word; hyphens:auto; line-height:1.25;
-    }
+    table.check th:nth-child(3), table.check td:nth-child(3){ width:64px; text-align:center; white-space:nowrap; }
+    table.check th:first-child, table.check td:first-child{ white-space:normal; word-break:break-word; hyphens:auto; line-height:1.25; }
 
     .head-todo{ background:var(--todo-bg)!important; color:var(--todo-accent); border-color:var(--todo-accent)!important; }
     .head-ok{ background:var(--ok-bg)!important; color:var(--ok-accent); border-color:var(--ok-accent)!important; }
-
     .is-todo td{ background:var(--todo-bg); } .is-ok td{ background:var(--ok-bg); }
 
-    /* Tâches obligatoires en rouge (colonne 1 uniquement) */
-    .is-required td:first-child, .is-required td:first-child *{
-      color:var(--todo-accent)!important; font-weight:700;
-    }
+    .is-required td:first-child, .is-required td:first-child *{ color:var(--todo-accent)!important; font-weight:700; }
 
     .notes{ margin-top:16px; border:2px solid var(--line); border-radius:6px; padding:10px; background:#fff; }
     .notes h3{ margin:0 0 6px; font-size:14px; text-transform:uppercase; }
@@ -60,14 +50,13 @@
     .field label{ display:block; font-size:12px; color:#333; margin:8px 0 4px; }
     .field input, .field textarea, .field select{ width:100%; padding:8px; border:1px solid #ccc; border-radius:4px; font-size:13px; }
 
-    /* Radios -> pastilles ○ / ● ultra compactes */
+    /* Radios pastilles ○ / ● */
     .radio-row{ display:flex; gap:24px; align-items:center; flex-wrap:wrap; }
     .radio-option{ display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--ink); white-space:nowrap; }
-    .radio-option input[type="radio"]{
-      position:absolute; opacity:0; width:1px; height:1px; pointer-events:none;
-    }
+    .radio-option input[type="radio"]{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
     .r-bullet::before{ content:'○'; display:inline-block; font-size:14px; line-height:1; }
     .radio-option input[type="radio"]:checked + .r-bullet::before{ content:'●'; font-weight:700; }
+    .r-text{ margin-left:4px; }
 
     .footer{ display:grid; gap:12px; grid-template-columns:1fr 1fr; margin-top:16px; }
     @media (max-width:700px){ .footer{ grid-template-columns:1fr; } }
@@ -81,6 +70,15 @@
     .form-message{ margin-top:15px; padding:12px; border-radius:6px; font-weight:bold; text-align:center; }
     .form-message.success{ background:#d4edda; color:#155724; border:1px solid #c3e6cb; }
     .form-message.error{ background:#f8d7da; color:#721c24; border:1px solid #f5c6cb; }
+    .form-message .retry{ margin-left:10px; padding:6px 10px; border:0; border-radius:5px; background:#111; color:#fff; cursor:pointer; }
+
+    /* Grand message de succès */
+    .success-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
+    .success-card{ background:#fff; border-radius:12px; max-width:560px; width:100%; text-align:center; padding:24px 20px; box-shadow:0 12px 40px rgba(0,0,0,.25); }
+    .success-card h3{ margin:0 0 10px; font-size:22px; }
+    .success-card p{ margin:0; font-size:14px; }
+    .success-card .ok{ margin-top:16px; padding:10px 16px; border:none; border-radius:8px; background:#2e7d32; color:#fff; font-weight:700; cursor:pointer; }
+    .hidden{ display:none !important; }
 
     @media print{
       body{background:#fff}
@@ -126,15 +124,27 @@
             <div class="field" style="flex:1 1 280px">
               <label>La commande sur Inpulse a été validée</label>
               <div class="radio-row" role="radiogroup" aria-label="Commande validée">
-                <label class="radio-option" aria-label="Commande validée - Oui"><input type="radio" name="commandeValidee" value="Oui"><span class="r-bullet" aria-hidden="true"></span></label>
-                <label class="radio-option" aria-label="Commande validée - Non"><input type="radio" name="commandeValidee" value="Non"><span class="r-bullet" aria-hidden="true"></span></label>
+                <label class="radio-option">
+                  <input type="radio" name="commandeValidee" value="Oui">
+                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Oui</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="commandeValidee" value="Non">
+                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Non</span>
+                </label>
               </div>
             </div>
             <div class="field" style="flex:1 1 280px">
               <label>Le reporting a été rempli</label>
               <div class="radio-row" role="radiogroup" aria-label="Reporting rempli">
-                <label class="radio-option" aria-label="Reporting rempli - Oui"><input type="radio" name="reportingRempli" value="Oui"><span class="r-bullet" aria-hidden="true"></span></label>
-                <label class="radio-option" aria-label="Reporting rempli - Non"><input type="radio" name="reportingRempli" value="Non"><span class="r-bullet" aria-hidden="true"></span></label>
+                <label class="radio-option">
+                  <input type="radio" name="reportingRempli" value="Oui">
+                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Oui</span>
+                </label>
+                <label class="radio-option">
+                  <input type="radio" name="reportingRempli" value="Non">
+                  <span class="r-bullet" aria-hidden="true"></span><span class="r-text">Non</span>
+                </label>
               </div>
             </div>
           </div>
@@ -156,6 +166,15 @@
     </form>
 
     <div id="formMessageContainer"></div>
+  </div>
+
+  <!-- Grand message de succès -->
+  <div id="successOverlay" class="success-overlay hidden" role="dialog" aria-modal="true">
+    <div class="success-card">
+      <h3 id="successTitle">Merci !</h3>
+      <p id="successDetails">La passation est enregistrée.</p>
+      <button class="ok" onclick="document.getElementById('successOverlay').classList.add('hidden')">OK</button>
+    </div>
   </div>
 
   <!-- Sections dynamiques -->
@@ -293,26 +312,31 @@
   <script>
     const WEBAPP_URL = 'https://script.google.com/macros/s/AKfycbzfVPLdU4OAw-BRb48Y7i_bXMov0J4QSKNZdiYetRghAGSWpVKxFgmJ-NSlUkXXoU9i/exec';
 
-    function showMessage(text, type){
+    function showMessage(text, type, withRetry){
       const c = document.getElementById('formMessageContainer');
       c.innerHTML = '';
       const m = document.createElement('div');
       m.className = 'form-message ' + (type === 'success' ? 'success' : 'error');
       m.textContent = text;
+      if (withRetry){
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'retry'; b.textContent = 'Réessayer';
+        b.onclick = () => document.querySelector('#passationForm button[type="submit"]').click();
+        m.appendChild(b);
+      }
       c.appendChild(m);
     }
+
     function blobToBase64(blob){
       return new Promise((resolve)=>{ const r=new FileReader(); r.onloadend=()=>resolve(r.result.split(',')[1]); r.readAsDataURL(blob); });
     }
 
-    // Empêcher les doublons (clé par date + responsable)
     function makeKey(meta){
       const d = meta.date || new Date().toISOString().slice(0,10);
       const r = (meta.responsable||'').trim().toLowerCase();
       return `passation-sent-${d}-${r}`;
     }
 
-    // PDF avec corrections iOS + mise en page compacte dans le clone
     async function makePdfBlob(page){
       const opt = {
         margin: 10,
@@ -320,16 +344,13 @@
           scale: 2,
           useCORS: true,
           onclone: (doc) => {
-            // Neutraliser l'apparence iOS/Safari (évite erreurs de 'color()' / accent-color)
             const s = doc.createElement('style');
             s.textContent = `
               * { -webkit-appearance: none !important; appearance: none !important; }
               input, select, textarea { background:#fff !important; color:#111 !important; }
-              /* garder les pastilles ○/● visibles (span.r-bullet) */
             `;
             doc.head.appendChild(s);
 
-            // Compacter le tableau dans le PDF + éviter la coupe à droite
             doc.querySelectorAll('table.check').forEach(t=>{
               t.style.tableLayout = 'fixed';
               t.style.width = '100%';
@@ -350,7 +371,6 @@
               c.style.lineHeight = '1.25';
             });
 
-            // Figer les valeurs des champs
             ['date','time','number','text'].forEach(type=>{
               doc.querySelectorAll(`input[type="${type}"]`).forEach(el=>{
                 el.setAttribute('value', el.value || '');
@@ -374,11 +394,12 @@
     }
 
     let formAlreadySent = false;
+
     document.getElementById('passationForm').addEventListener('submit', async (e)=>{
       e.preventDefault();
 
       const form = e.target;
-      const btn = form.querySelector('button[type="submit"]');
+      const btn  = form.querySelector('button[type="submit"]');
 
       const meta = {
         date: form.date.value,
@@ -415,15 +436,24 @@
         let json; try{ json = JSON.parse(txt); } catch{ throw new Error('Réponse non-JSON'); }
         if (json.status !== 'ok') throw new Error(json.message || 'Erreur serveur');
 
+        // Succès : verrouiller + grand message
         formAlreadySent = true;
         localStorage.setItem(key, '1');
-        showMessage('✅ Checklist envoyée avec succès !', 'success');
+
+        const title = document.getElementById('successTitle');
+        const details = document.getElementById('successDetails');
+        title.textContent = `Merci ${meta.responsable || ''} !`;
+        details.textContent = `La passation a bien été enregistrée.`;
+        document.getElementById('successOverlay').classList.remove('hidden');
+
+        // On peut aussi afficher un petit message si tu veux
+        // showMessage('✅ Checklist envoyée avec succès !', 'success');
 
       }catch(err){
         submitbar.style.display = prevDisplay;
-        btn.disabled = false;
+        btn.disabled = false;              // ré-activer pour réessayer
         console.error(err);
-        showMessage('❌ Échec de l’envoi : ' + err.message, 'error');
+        showMessage('❌ Échec de l’envoi : ' + err.message, 'error', true); // bouton Réessayer
       }
     });
   </script>
