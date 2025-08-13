@@ -340,10 +340,12 @@
 
     async function makePdfBlob(page){
       const opt = {
-        margin: 10,
+        margin: [5, 10, 10, 10],                     // top réduit
+        pagebreak: { mode: 'avoid', avoid: '.page' },// évite saut après le conteneur
         html2canvas: {
           scale: 2,
           useCORS: true,
+          scrollY: 0,                                // évite page blanche iOS
           onclone: (doc) => {
             const s = doc.createElement('style');
             s.textContent = `
@@ -351,6 +353,14 @@
               input, select, textarea { background:#fff !important; color:#111 !important; }
             `;
             doc.head.appendChild(s);
+
+            // Supprime la marge externe du conteneur imprimé (cause fréquente 1ʳᵉ page vide)
+            const pageEl = doc.querySelector('.page');
+            if (pageEl){
+              pageEl.style.margin = '0';
+              pageEl.style.background = '#fff';
+              pageEl.style.borderRadius = '0';
+            }
 
             // compacter le tableau dans le clone
             doc.querySelectorAll('table.check').forEach(t=>{
