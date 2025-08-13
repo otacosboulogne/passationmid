@@ -418,6 +418,7 @@
         date: form.date.value,
         heure: form.heure.value,
         responsable: (form.respUnique?.value || form.responsable?.value || '').trim()
+        ruptures: (form.ruptures?.value || '').trim()
       };
 
       const key = makeKey(meta);
