@@ -340,12 +340,12 @@
 
     async function makePdfBlob(page){
       const opt = {
-        margin: [5, 10, 10, 10],                     // top réduit
-        pagebreak: { mode: 'avoid', avoid: '.page' },// évite saut après le conteneur
+        margin: [5, 10, 10, 10],                 // marge top réduite
+        pagebreak: { mode: 'avoid', avoid: '.page' }, // pas de saut juste après .page
         html2canvas: {
           scale: 2,
           useCORS: true,
-          scrollY: 0,                                // évite page blanche iOS
+          scrollY: 0,                            // évite la page blanche iOS
           onclone: (doc) => {
             const s = doc.createElement('style');
             s.textContent = `
@@ -354,7 +354,7 @@
             `;
             doc.head.appendChild(s);
 
-            // Supprime la marge externe du conteneur imprimé (cause fréquente 1ʳᵉ page vide)
+            // Supprimer la marge/arrondi du conteneur dans le clone pour éviter une "fausse" 1ère page
             const pageEl = doc.querySelector('.page');
             if (pageEl){
               pageEl.style.margin = '0';
